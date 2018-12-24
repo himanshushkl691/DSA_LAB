@@ -1,0 +1,34 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#typedef long long ll;
+#define upto(i,a,b,inc) for(int i = a;i<=b;i += inc)
+#define downto(i,a,b,dec) for(int i = a;i>=b;i-=dec)
+#define INF 1000000007
+#define MAX 1000001
+
+struct plate{
+  char ch;
+  struct plate *link;
+};
+
+struct stack{
+  int size;
+  struct plate *top;
+};
+
+struct plate *create(char item){
+  struct plate *n;
+  n = (struct plate *)malloc(sizeof(struct plate));
+  n->ch = item;
+  n->link = NULL;
+  return n;
+}
+
+struct stack *initialise(){
+  struct stack *n;
+  n = (struct stack *)malloc(sizeof(struct stack));
+  n->top = NULL;
+  return n;
+}
+
