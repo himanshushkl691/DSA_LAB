@@ -198,7 +198,6 @@ int main(){
   tmp = (char *)malloc(sizeof(char)*MAX);
   str = (char *)malloc(sizeof(char)*0);
   fscanf(fs," %[^\n]s",tmp);
-  printf("%s\n",tmp);
   int i = 0,z = 0;
   while (i<strlen(tmp)){
     if((tmp[i] >= '0' && tmp[i]<='9') ||tmp[i] == ')' || tmp[i] == '('){
@@ -208,7 +207,6 @@ int main(){
     }
     i++;
   }
-  printf("%s\n",str);
   myset->root = create_tree(str,myset->root,1);
   setLevel(myset->root,0);
   fprintf(ft,"%d %d %d\n",height(myset->root),diameter(myset->root),maxwidth(myset->root));

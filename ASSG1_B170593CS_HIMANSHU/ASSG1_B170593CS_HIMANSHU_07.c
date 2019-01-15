@@ -173,15 +173,26 @@ int main(){
   //m mirror(node *)
   //s terminate
   while(1){
-    if (ch == 's')
-      return 0;
+    if (ch == 's'){
+      printf("\n");
+      break;
+    }
     else if(ch == 'c'){
       char *str;
       str = (char *)malloc(sizeof(char)*MAX);
       scanf(" %[^\n]s",str);
-      printf("%s\n",str);
+      char *tmp;
+      tmp = (char *)malloc(sizeof(char)*0);
+      int size = strlen(str),zidx = 0;
+      for (int i = 0;i<size;i++){
+	if (str[i] != ' ' && str[i] != '\n'){
+	zidx++;
+	tmp = (char *)realloc(tmp,sizeof(char)*zidx);
+	tmp[zidx - 1] = str[i];
+	}
+      }
       myset = initialise();
-      myset->root = create_tree(str,myset->root,1);
+      myset->root = create_tree(tmp,myset->root,1);
     }
     else if (ch == 'p'){
       print_tree(myset->root);
