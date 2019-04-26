@@ -1,0 +1,187 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+struct node{
+  int f;
+  char ch;
+  struct node *left,*right;
+};
+
+struct bt{
+  struct node *root;
+};
+
+struct node *create(int freq,char ch){
+  struct node *n;
+  n = (struct node *)malloc(sizeof(struct node));
+  n->f = freq;
+  n->ch = ch;
+  n->left = n->right = NULL;
+  return n;
+}
+
+struct bt *newbt(){
+  struct bt *n;
+  n = (struct bt *)malloc(sizeof(struct bt));
+  n->root = NULL;
+}
+
+struct PriorityQueue{
+  struct node **arr;
+  int size;
+};
+
+
+void swap(struct node **a,struct node **b){
+  struct node *tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
+struct PriorityQueue *initialise(){
+  struct PriorityQueue * n;
+  n = (struct PriorityQueue *)malloc(sizeof(struct PriorityQueue));
+  n->size = 0;
+  n->arr = (struct node *)malloc(sizeof(struct node)*n->size);
+  return n;
+}
+
+void MinHeapify(struct node **arr,int idx,int n){
+  int left = 2 * idx + 1;
+  int right = 2 * idx + 2;
+  int mn = idx;
+  if (left < n && arr[left]->f < arr[mn]->f)
+    mn = left;
+  if (right < n && arr[right]->f < arr[mn]->f)
+    mn = right;
+  if (mn != idx){
+    swap(&arr[mn],&arr[idx]);
+    MinHeapify(arr,mn,n);
+  }
+}
+
+struct PriorityQueue *insert(struct PriorityQueue * pq,struct node *item){
+  pq->size++;
+  pq->arr = (struct node *)realloc(pq->arr,sizeof(struct node)*pq->size);
+  pq->arr[pq->size-1] = item;
+  int idx = pq->size-1;
+  while (idx>0 && (pq->arr[idx]->f < pq->arr[idx/2]->f)){
+    swap(&pq->arr[idx],&pq->arr[idx/2]);
+    idx /= 2;
+  }
+  return pq;
+}
+
+int minimum(struct PriorityQueue * pq){
+  if (pq->size)
+    return pq->arr[0]->f;
+  else
+    return -100000009;
+}
+
+struct node *extractMin(struct PriorityQueue * pq){
+  if (!pq->size)
+    return NULL;
+  else if (pq->size == 1){
+    struct node *tmp = pq->arr[0];
+    int sz = pq->size -1;
+    pq->arr = (struct node *)realloc(pq->arr,sizeof(struct node)*sz);
+    pq->size--;
+    return tmp;
+  }
+  else{
+    struct node *tmp = pq->arr[0];
+    swap(&pq->arr[0],&pq->arr[pq->size-1]);
+    int sz = pq->size - 1;
+    pq->arr = (struct node *)realloc(pq->arr,sizeof(struct node)*sz);
+    pq->size--;
+    MinHeapify(pq->arr,0,pq->size);
+    return tmp;
+  }
+}
+
+struct node *buildTree(struct PriorityQueue *pq){
+  while(pq->size > 0 && pq->size != 1){
+    struct node *tmp0 = extractMin(pq);
+    struct node *tmp1 = extractMin(pq);
+    int f0 = tmp0->f,f1 = tmp1->f;
+    struct node *newnode;
+    newnode = create(f0+f1,'?');
+    if (f0 < f1){
+      newnode->left = tmp0;
+      newnode->right = tmp1;
+    }
+    else{
+      newnode->left = tmp1;
+      newnode->right = tmp0;
+    }
+    pq = insert(pq,newnode);
+  }
+  return extractMin(pq);
+}
+
+void print_arr(int *arr,int n){
+  for (int i = 0;i<n;i++)
+    printf("%d ",arr[i]);
+  printf("\n");
+}
+
+void preorder(struct node *root,int **aRes,int *tmp,int top){
+  if (root->left){
+    tmp[top] = 0;
+    preorder(root->left,aRes,tmp,top+1);
+  }
+  if (root->right){
+    tmp[top] = 1;
+    preorder(root->right,aRes,tmp,top+1);
+  }
+  if (!(root->left)&&!(root->right)){
+    aRes[root->ch - 'a'] = (int *)malloc(sizeof(int)*0);
+    aRes[root->ch - 'a'] = (int *)realloc(aRes[root->ch - 'a'],sizeof(int)*(top+1));
+    for(int i = 0;i<=top;i++){
+      aRes[root->ch - 'a'][i] = tmp[i];
+    }
+  }
+}
+
+int main(){
+  struct PriorityQueue * pq;
+  pq = initialise();
+  char *str;
+  str = (char *)malloc(sizeof(char)*1000000);
+  scanf("%s",str);
+  int *alpha;
+  alpha = (int *)malloc(sizeof(int)*26);
+  for (int i = 0;i<26;i++)
+    alpha[i] = 0;
+  int n = strlen(str);
+  for (int i = 0;i<n;i++){
+    alpha[str[i] - 'a']++;
+  }
+  for (int i= 0;i<26;i++){
+    if (alpha[i]){
+      struct node *tmp;
+      tmp = create(alpha[i],(i+'a'));
+      pq = insert(pq,tmp);
+    }
+  }
+  int **aRes,*tmp;
+  tmp = (int *)malloc(sizeof(int)*n);
+  aRes = (int *)malloc(sizeof(int)*26);
+  for (int i = 0;i<26;i++)
+    aRes[i] = (int *)malloc(sizeof(int)*0);
+  struct node *huffmanTree;
+  huffmanTree = buildTree(pq);
+  preorder(huffmanTree,aRes,tmp,0);
+  for (int i = 0;i<26;i++){
+   int size = sizeof(aRes[i])/sizeof(int);    
+   if (size != 0){
+     printf("%c-> ",i+'a');
+     for (int j = 0;j<size;j++)
+       printf("%d",aRes[i][j]);
+     printf("\n");
+   }
+  }
+}

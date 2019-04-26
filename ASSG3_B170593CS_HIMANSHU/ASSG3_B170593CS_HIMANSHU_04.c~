@@ -1,0 +1,247 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+
+//DOUBLY LINKED LIST DEFINITION
+struct node
+{
+    int item;
+    struct node *next,*prev,*parent;
+};
+
+struct dll
+{
+    struct node *head,*tail;
+    int size;
+};
+
+struct node *createNode(int item)
+{
+    struct node *n;
+    n = (struct node *)malloc(sizeof (struct node));
+    n->item = item;
+    n->next = n->prev = n->parent = NULL;
+    return n;
+}
+
+struct dll *init_dll()
+{
+    struct dll *n;
+    n = (struct dll *)malloc(sizeof(struct dll));
+    n->head = n->tail = NULL;
+    n->size = 0;
+    return n;
+}
+
+struct dll *push_back(struct dll *h,int item)
+{
+    struct node *newnode = createNode(item);
+    if (!h->head)
+    {
+        h->head = newnode;
+        h->tail = newnode;
+        h->size++;
+        return h;
+    }
+    else
+    {
+        h->tail->next = newnode;
+        newnode->prev = h->tail;
+        h->tail = newnode;
+        h->size++;
+        return h;
+    }    
+}
+
+struct dll *push_front(struct dll *h,int item)
+{
+    struct node *newnode = createNode(item);
+    if (h->head)
+    {
+        h->head = newnode;
+        h->tail = newnode;
+        h->size++;
+        return h;
+    }
+    else
+    {
+        h->head->prev = newnode;
+        newnode->next = h->head;
+        h->head = newnode;
+        h->size++;
+        return h;
+    }
+}
+
+//appending a with b//a<---b
+struct dll *append(struct dll *a,struct dll *b)
+{
+    a->tail->next = b->head;
+    b->head->prev = a->tail;
+    struct node *curr = b->head;
+    while (curr)
+    {
+        curr->parent = a->head;
+        curr = curr->next;
+    }
+    a->tail = b->tail;
+    a->size += (b->size);
+    return a;
+}
+//DOUBLY LINKED LIST DEFINED
+
+//DISJOINT SET DEFINITION
+struct dsu
+{
+    struct node *hash[1000001];
+    struct dll *set[1000001];
+};
+
+struct dsu *initialise()
+{
+    struct dsu *n;
+    n = (struct dsu *)malloc(sizeof(struct dsu));
+    for (int i = 0;i<1000001;i++)
+    {
+        n->set[i] = init_dll();
+        n->hash[i] = NULL;
+    }
+    return n;
+}
+
+int MAKE_SET(struct dsu *h,int k)
+{
+    h->set[k] = push_back(h->set[k],k);
+    h->set[k]->head->parent = h->set[k]->head;
+    h->hash[k] =  h->set[k]->head;
+    return k;
+}
+
+int FIND_SET(struct dsu *h,int x)
+{
+    if (!h->hash[x])
+        return -1;
+    else
+    {
+        return (h->hash[x]->parent->item);
+    }
+}
+
+int UNION_SET_NORM(struct dsu *h,int x,int y)
+{
+    int a = FIND_SET(h,x);
+    int b = FIND_SET(h,y); 
+    if (a!=-1 && b!=-1 && a!=b)
+    {
+        h->set[a] = append(h->set[a],h->set[b]);
+        return a;
+    }
+    else if(a!=-1 && b!=-1 && a==b)
+        return a;
+    else if (a==-1 || b==-1)
+        return -1;
+}
+
+int UNION_SET(struct dsu *h,int x,int y)
+{
+    int a = FIND_SET(h,x);
+    int b = FIND_SET(h,y); 
+    if (a!=-1 && b!=-1 && a!=b)
+    {
+        int sizea = h->set[a]->size;
+        int sizeb = h->set[b]->size;
+        if (sizea == sizeb)
+        {
+            if (a>b)
+            {
+                h->set[b] = append(h->set[b],h->set[a]);
+                return b;
+            }
+            else
+            {
+                h->set[a] = append(h->set[a],h->set[b]);
+                return a;
+            }
+            
+        }
+        else if (sizea > sizeb)
+        {
+            h->set[a] = append(h->set[a],h->set[b]);
+            return a;
+        }
+        else
+        {
+            h->set[b] = append(h->set[b],h->set[a]);
+            return b;
+        }
+    }
+    else if(a!=-1 && b!=-1 && a==b)
+        return a;
+    else if (a==-1 || b==-1)
+        return -1;
+}
+
+int main()
+{
+    struct dsu *myset_norm,*myset;
+    FILE *fs,*ft;
+    fs = fopen("input.txt","r");
+    if(!fs)
+    {
+        printf("Could not open input file.\n");
+        exit(0);
+    }
+    ft = fopen("output.txt","w");
+    if(!ft)
+    {
+        printf("Could not open output file.\n");
+        fclose(fs);
+        exit(0);
+    }
+    myset = initialise();
+    myset_norm = initialise();
+    char ch;
+    while (fscanf(fs,"%c",&ch) != EOF)
+    {
+        int x,y;
+        if (ch == 'm')
+        {
+            fscanf(fs,"%d",&x);
+            if ((!myset->hash[x]) && (!myset_norm->hash[x]))
+            {
+                MAKE_SET(myset_norm,x);
+                MAKE_SET(myset,x);
+                fprintf(ft,"%d\n",x);
+            }
+            else
+            {
+                fprintf(ft,"PRESENT\n");
+            }
+            
+        }
+        else if (ch == 'u')
+        {
+            fscanf(fs,"%d %d",&x,&y);
+            int check = UNION_SET_NORM(myset_norm,x,y);
+            if (check == -1)
+                fprintf(ft,"ERROR ");
+            else
+                fprintf(ft,"%d ",check);
+        }
+        else if (ch == 'f')
+        {
+            fscanf(fs,"%d",&x);
+            int check = FIND_SET(myset_norm,x);
+            if (check == -1)
+                fprintf(ft,"NOT FOUND ");
+            else
+                fprintf(ft,"%d ",check);     
+        }
+        else if (ch == 's')
+        {
+            return 0;
+        }
+    }
+    return 0;
+}

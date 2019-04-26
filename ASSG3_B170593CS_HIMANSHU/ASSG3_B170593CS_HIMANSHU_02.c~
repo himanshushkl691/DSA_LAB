@@ -1,0 +1,549 @@
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+#define and &&
+#define or ||
+#define not !
+
+int max(int a,int b)
+{
+    return ((a>b)?a:b);
+}
+
+struct t_node
+{
+    int item;
+    int h;
+    int AVL_bit;
+    struct t_node *left,*right,*parent;
+};
+
+struct AVL
+{
+    struct t_node *root;
+};
+
+struct t_node *create(int item)
+{
+    struct t_node *n;
+    n = (struct t_node *)malloc(sizeof(struct t_node));
+    n->AVL_bit = 1;
+    n->h = 0;
+    n->item = item;
+    n->left = n->right = n->parent = NULL;
+    return n;
+}
+
+struct AVL *initialise()
+{
+    struct AVL *h;
+    h = (struct AVL *)malloc(sizeof(struct AVL));
+    h->root = NULL;
+    return h;
+}
+
+int isBalanced(struct t_node *curr)
+{
+    int diff;
+    if (curr->left && curr->right)
+        diff = (curr->left->h - curr->right->h);
+    else if (curr->left && !curr->right)
+        diff = 1 + curr->left->h;
+    else if (curr->right && !curr->left)
+        diff = -1 - curr->right->h;
+    else
+        diff = 0;
+    return diff;
+}
+
+void fixHeight(struct t_node *curr)
+{
+    if (curr->left && curr->right)
+        curr->h = 1 + max(curr->left->h, curr->right->h);
+    else if (curr->left && !curr->right)
+        curr->h = 1 + curr->left->h;
+    else if (curr->right && !curr->left)
+        curr->h = 1 + curr->right->h;
+    else
+        curr->h = 0;
+}
+
+void fixAVLBit(struct t_node *curr)
+{
+    if (abs(isBalanced(curr))>1)
+        curr->AVL_bit = 0;
+    else
+        curr->AVL_bit = 1;
+}
+
+void setHeight(struct t_node *curr)
+{
+    while (curr)
+    {
+        fixHeight(curr);
+        curr = curr->parent;
+    }
+}
+
+void setAVLBit(struct t_node *curr)
+{
+    while(curr)
+    {
+        fixAVLBit(curr);
+        curr = curr->parent;
+    }
+}
+
+int isAVL(struct t_node *h)
+{
+    return h->AVL_bit;
+}
+
+struct t_node *findUnbalanced(struct t_node *curr)
+{
+    while(curr && abs(isBalanced(curr))<=1)
+        curr = curr->parent;
+    return curr;
+}
+
+struct t_node *leftRotate(struct t_node *x)
+{
+    struct t_node *y,*z;
+    y = x->right;
+    z = NULL;
+    if (y)
+    {
+        z = y->right;
+        y->parent = x->parent;
+        x->right = y->left;
+        if (y->left)
+            y->left->parent = x;
+        y->left = x;
+        x->parent = y;
+        fixHeight(x);
+        fixAVLBit(x);
+    }
+    return y;
+}
+
+struct t_node *rightRotate(struct t_node *x)
+{
+    struct t_node *y,*z;
+    y = x->left;
+    z = NULL;
+    if(y)
+    {
+        z = y->left;
+        x->left = y->right;
+        y->parent = x->parent;
+        if (y->right)
+            y->right->parent = x;
+        x->parent = y;
+        y->right = x;
+        fixHeight(x);
+        fixAVLBit(x);
+    }
+    return y;
+}
+
+struct t_node *activateBalancer(struct t_node *root,struct t_node *x)
+{
+    if (x)
+    {
+        int b = isBalanced(x);
+        if (x->right and b<-1 and (isBalanced(x->right)<=0))
+        {
+            if(x->parent)
+            {
+                if ((x->parent->right) == x)
+                {
+                    x->parent->right = leftRotate(x);
+                    setHeight(x->parent->right);
+                    setAVLBit(x->parent->right);
+                }
+                else if ((x->parent->left) == x)
+                {
+                    x->parent->left = leftRotate(x);
+                    setHeight(x->parent->left);
+                    setAVLBit(x->parent->left);
+                }
+            }
+            else
+            {
+                root = leftRotate(x);
+                setHeight(root);
+                setAVLBit(root);
+            }            
+        }
+        else if (x->left and b>1 and (isBalanced(x->left)>=0))
+        {
+            if(x->parent)
+            {
+                if ((x->parent->right) == x)
+                {
+                    x->parent->right = rightRotate(x);
+                    setHeight(x->parent->right);
+                    setAVLBit(x->parent->right);
+                }
+                else if ((x->parent->left) == x)
+                {
+                    x->parent->left = rightRotate(x);
+                    setHeight(x->parent->left);
+                    setAVLBit(x->parent->left);
+                }
+            }
+            else
+            {
+                root = rightRotate(x);
+                setHeight(root);
+                setAVLBit(root);
+            }
+        }
+        else if (x->right and b<-1 and (isBalanced(x->right)>0))
+        {
+            if (x->parent)
+            {
+                if (x == (x->parent->right))
+                {
+                    x->right = rightRotate(x->right);
+                    x->parent->right = leftRotate(x);
+                    setHeight(x->parent->right);
+                    setAVLBit(x->parent->right);
+                }
+                else if (x == (x->parent->left))
+                {
+                    x->right = rightRotate(x->right);
+                    x->parent->left = leftRotate(x);
+                    setHeight(x->parent->left);
+                    setAVLBit(x->parent->left);
+                }
+            }
+            else
+            {
+                x->right = rightRotate(x->right);
+                root = leftRotate(x);
+                setHeight(root);
+                setAVLBit(root);
+            }            
+        }
+        else if (x->left and b>1 and (isBalanced(x->left)<0))
+        {
+            if (x->parent)
+            {
+                if (x == (x->parent->right))
+                {
+                    x->left = leftRotate(x->left);
+                    x->parent->right = rightRotate(x);
+                    setHeight(x->parent->right);
+                    setAVLBit(x->parent->right);
+                }
+                else if (x == (x->parent->left))
+                {
+                    x->left = leftRotate(x->left);
+                    x->parent->left = rightRotate(x);
+                    setHeight(x->parent->left);
+                    setAVLBit(x->parent->left);
+                }
+            }
+            else
+            {
+                x->left = leftRotate(x->left);
+                root = rightRotate(x);
+                setHeight(root);
+                setAVLBit(root);
+            }            
+        }
+    }
+    return root;
+}
+
+void preorder(struct t_node *root,FILE *ft)
+{
+    if (root)
+    {
+        fprintf(ft,"%d",root->item);
+        if(root->left || root->right)
+        {
+            fprintf(ft,"(");
+            preorder(root->left,ft);
+	        fprintf(ft,")(");
+            preorder(root->right,ft);
+	        fprintf(ft,")");
+        }
+    }
+}
+
+void inorder(struct t_node *root)
+{
+	if (root)
+	{
+		inorder(root->left);
+		printf("%d-->%d\n",root->item,root->h);
+		inorder(root->right);
+	}
+}
+
+struct t_node *insert(struct t_node *root,int item)
+{
+    struct t_node *newnode = create(item);
+    if (!root)
+    {
+        root = newnode;
+        return root;
+    }
+    else
+    {
+        struct t_node *curr;
+        curr = root;
+        while(curr)
+        {
+            if (curr->item == item)
+                return root;
+            else if (curr->item < item)
+            {
+                if (curr->right)
+                    curr = curr->right;
+                else
+                {
+                    curr->right = newnode;
+                    newnode->parent = curr;
+                    break;
+                }
+            }
+            else
+            {
+                if (curr->left)
+                    curr = curr->left;
+                else
+                {
+                    curr->left = newnode;
+                    newnode->parent = curr;
+                    break;
+                }
+            }        
+        }
+        setHeight(newnode);
+        setAVLBit(newnode);
+        struct t_node *curr0 = findUnbalanced(newnode);
+        root = activateBalancer(root,curr0);
+    }
+    return root;
+}
+
+struct t_node *search(struct t_node *root,int key)
+{
+    if (!root)
+        return NULL;
+    if (root->item == key)
+        return root;
+    if (root->item > key)
+        return search(root->left,key);
+    if (root->item < key)
+        return search(root->right,key);
+}
+
+int getBalance(struct t_node *root,int key)
+{
+    struct t_node *itr = search(root,key);
+    if (itr)
+        return isBalanced(itr);
+    else
+        return -1000000007;
+}
+
+struct t_node *minimum(struct t_node *root)
+{
+	struct t_node *curr = root;
+	while (curr->left)
+		curr = curr->left;
+	return curr;
+}
+
+struct t_node *successor(struct t_node *root,struct t_node *x)
+{
+	if (x->right)
+		return minimum(x->right);
+	struct t_node *y = x->parent;
+	while (y && x==(y->right))
+	{
+		x = y;
+		y = y->parent;
+	}
+	return y;
+}
+
+struct t_node *del(struct t_node *root,struct t_node *key)
+{
+	struct t_node *y,*x;
+    	if (!key->right || !key->left)
+		y = key;
+	else
+		y = successor(root,key);
+	if (y->left)
+		x = y->left;
+	else
+		x = y->right;
+	if (x)
+		x->parent = y->parent;
+	if (y->parent == NULL)
+		root = x;
+	else if (y == y->parent->left)
+		y->parent->left = x;
+	else if (y == y->parent->right)
+		y->parent->right = x;
+	if (key != y)
+		key->item = y->item;
+	setHeight(y->parent);
+	setAVLBit(y->parent);
+	struct t_node *curr = y->parent;
+	while(curr)
+	{
+	        setHeight(curr);
+	        setAVLBit(curr);
+	        struct t_node *tmp = curr->parent;
+		root = activateBalancer(root,curr);
+		curr = tmp;
+	}
+	return root;
+}
+
+int main()
+{
+    struct AVL *myset;
+    myset = initialise();
+    FILE *fs,*ft;
+    fs = fopen("input.txt","r");
+    if(!fs)
+    {
+        printf("Could not open input file.\n");
+        exit(0);
+    }
+    ft = fopen("output.txt","w");
+    if(!ft)
+    {
+        printf("Could not open output file.\n");
+        fclose(fs);
+        exit(0);
+    }
+    int op;
+    while(fscanf(fs,"%d",&op) != EOF)
+    {
+        if (op == 9)
+            return 0;
+        else if(op == 1)
+        {
+            int x;
+            fscanf(fs,"%d",&x);
+            myset->root = insert(myset->root,x);
+        }
+        else if (op == 2)
+        {
+            int x;
+            fscanf(fs,"%d",&x);
+            struct t_node *itr;
+            itr = search(myset->root,x);
+            if(itr)
+                myset->root = del(myset->root,itr);
+            else
+                fprintf(ft,"EMPTY\n");
+        }
+        else if (op == 3)
+        {
+            int numb;
+            fscanf(fs,"%d",&numb);
+            struct t_node *x;
+            x = search(myset->root,numb);
+            if(x)
+            {
+                if(x->parent)
+                {
+                    if ((x->parent->right) == x)
+                    {
+                        x->parent->right = leftRotate(x);
+                        setHeight(x->parent->right);
+                        setAVLBit(x->parent->right);
+                    }
+                    else if ((x->parent->left) == x)
+                    {
+                        x->parent->left = leftRotate(x);
+                        setHeight(x->parent->left);
+                        setAVLBit(x->parent->left);
+                    }
+                }
+                else
+                {
+                    myset->root = leftRotate(x);
+                    setHeight(myset->root);
+                    setAVLBit(myset->root);
+                }
+            }           
+        }
+        else if (op == 4)
+        {
+            int numb;
+            fscanf(fs,"%d",&numb);
+            struct t_node *x;
+            x = search(myset->root,numb);
+            if(x->parent)
+            {
+                if ((x->parent->right) == x)
+                {
+                    x->parent->right = rightRotate(x);
+                    setHeight(x->parent->right);
+                    setAVLBit(x->parent->right);
+                }
+                else if ((x->parent->left) == x)
+                {
+                    x->parent->left = rightRotate(x);
+                    setHeight(x->parent->left);
+                    setAVLBit(x->parent->left);
+                }
+            }
+            else
+            {
+                myset->root = rightRotate(x);
+                setHeight(myset->root);
+                setAVLBit(myset->root);
+            }
+        }
+        else if (op == 5)
+        {
+            int numb;
+            fscanf(fs,"%d",&numb);
+            struct t_node *x;
+            x = search(myset->root,numb);
+            if (x)
+                fprintf(ft,"%d\n",getBalance(myset->root,numb));
+            else
+                fprintf(ft,"NOT PRESENT\n");
+        }
+        else if(op == 6)
+        {
+            fprintf(ft,"(");
+            preorder(myset->root,ft);
+            fprintf(ft,")\n");
+        }
+        else if (op == 7)
+        {
+            if (isAVL(myset->root))
+                fprintf(ft,"TRUE\n");
+            else
+                fprintf(ft,"FALSE\n");
+        }
+        else if (op == 8)
+        {
+            int numb;
+            fscanf(fs,"%d",&numb);
+            struct t_node *x;
+            x = search(myset->root,numb);
+            if(x)
+                fprintf(ft,"TRUE\n");
+            else
+            {
+                fprintf(ft,"FALSE\n");
+            }            
+        }
+    }
+    return 0;
+}

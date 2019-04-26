@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <limits.h>
+
+int min(int a,int b){
+  return ((a>b)?b:a);
+}
+
+int max(int a,int b){
+  return ((a>b)?a:b);
+}
+
+int buildTree(int *tournament,int *arr,int idx,int s,int e){
+  if (s == e){
+    tournament[idx] = arr[s];
+    return arr[s];
+  }
+  int mid = (s + e)>>1;
+  tournament[idx] = min(buildTree(tournament,arr,2 * idx + 1,s,mid),buildTree(tournament,arr,2 * idx + 2,mid+1,e));
+  return tournament[idx];
+}
+
+void print_array(int *arr,int n){
+  for (int i = 0;i<n;i++){
+    printf("%d ",arr[i]);
+  }
+  printf("\n");
+}
+
+int main(){
+  int n;
+  scanf("%d",&n);
+  int *arr;
+  arr = (int *)malloc(sizeof(int)*n);
+  for (int i = 0;i<n;i++){
+    scanf("%d",&arr[i]);
+  }
+  int size = 2*pow(2,ceil(log2(n))) - 1;
+  int *tournament;
+  tournament = (int *)malloc(sizeof(int)*size);
+  buildTree(tournament,arr,0,0,n-1);//builds tournament tree
+  print_array(tournament,size);
+  //print second largest
+  int idx = 0,mn = INT_MAX,root = tournament[0];
+  while (idx < size - n){
+    int left = 2 * idx + 1;
+    int right = 2 * idx + 2;
+    if (left < size && tournament[left] == root){
+      if (right < size){
+	mn = min(mn,tournament[right]);
+      }
+      idx = left;
+    }
+    if (right < size && tournament[right] == root){
+      if (left < size){
+	mn = min(mn,tournament[left]);
+      }
+      idx = right;
+    }
+  }
+  printf("%d\n",mn);
+  return 0;
+}
