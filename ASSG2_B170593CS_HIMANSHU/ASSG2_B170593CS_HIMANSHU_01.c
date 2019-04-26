@@ -155,11 +155,15 @@ void print_ll(struct ll *h,FILE *ft)
 {
   struct node *curr;
   curr = h->head;
-  while (curr)
+  if (curr){
+  while (curr->next)
   {
     if (getData(curr) != -INF)
         fprintf(ft,"%d ",getData(curr));
     curr = curr->next;
+  }
+  if (getData(curr)!= -INF)
+    fprintf(ft,"%d",getData(curr));
   }
 }
 /**DOUBLY LINKED LIST DEFINED **/
@@ -429,7 +433,7 @@ void print_ht(struct ht *h,FILE *ft)
     for (int i = 0;i<h->size;i++)
     {
         fprintf(ft,"%d ",i);
-        fprintf(ft,"( ");
+        fprintf(ft,"(");
         print_ll(h->arr[i],ft);
         fprintf(ft,")\n");
     }

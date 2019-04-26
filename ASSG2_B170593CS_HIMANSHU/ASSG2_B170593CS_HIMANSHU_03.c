@@ -186,7 +186,6 @@ struct ht *hashTable(int m)
   n->size = m;
   return n;
 }
-
 int hash(int x,int y,int m)
 {
     int tmp = (((x+y+1)*(x+y)*modInv(2,m-2,m))%m + y%m)%m;
